@@ -18,6 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <stdio.h>
+#include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -46,11 +48,17 @@ UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
+
 volatile uint8_t counter = 0;
-
-uint8_t uart_buffer[9];
-int head = 1;
-
+uint8_t sendToken[128]={0};
+uint8_t receiveToken[128]={0};
+uint8_t isHead = 0;
+uint8_t isStored = 0;
+uint8_t isEnd = 0;
+uint8_t sumResult[1];
+uint8_t isVerify = 0;
+uint8_t length;
+uint8_t ID[]="E14_0"; 
 
 /* USER CODE END PV */
 
@@ -66,49 +74,115 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+uint8_t checkSum(uint8_t* token, uint8_t length) {
+	uint8_t checksum = 0;
+
+	for (uint8_t i = 0; i < length; i++) {
+		checksum ^= token[i];
+	}
+
+	return checksum;
+}
+
+void verify() {
+    uint8_t receivedChecksum = (sendToken[length - 3] - '0') * 100 +
+                               (sendToken[length - 2] - '0') * 10 +
+                               (sendToken[length - 1] - '0');
+
+    uint8_t calculatedChecksum = checkSum(sendToken, length - 4); // ignore space
+
+    if (calculatedChecksum == receivedChecksum) {
+        isVerify = 1;
+    }
+}
+
+void appendID() {
+	uint8_t i = length;
+	uint8_t j = 0;
+	sendToken[i] = ' ';
+	while(ID[j] != '\0' && i < sizeof(sendToken) - 1) {
+		i ++;
+		sendToken[i] = ID[j];
+		j ++;
+	}
+	i ++;
+	length = i;
+}
+
+void appendCheckSum() {
+    uint8_t i = length;
+    sendToken[i++] = ' ';
+
+    uint8_t checkSumValue[4];
+    sprintf((char*)checkSumValue, "%03u", sumResult[0]); // ###
+
+    for (uint8_t j = 0; j < 3; j++) {
+        sendToken[i++] = checkSumValue[j];
+    }
+    i++;
+    length = i;
+}
+
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	  if (htim->Instance == TIM1) {
-//		  HAL_GPIO_TogglePin (
-//			  Ext_LED_GPIO_Port,
-//			  Ext_LED_Pin);
-//		  HAL_UART_Receive(&huart2, (uint8_t*)character, 1, 1000);
-//
-//		  if (character[0] == 'E') {
-//			  counter++;
-//
-//			  HAL_UART_Transmit(&huart2, uart_buffer, strlen((char*)uart_buffer), HAL_MAX_DELAY);
-//		  }
-		  HAL_GPIO_TogglePin(
-				  Test2_LED_GPIO_Port,
-				  Test2_LED_Pin
-				  );
 		  counter++;
 		  if(counter>=250) {
 			  counter = 0;
-			  HAL_GPIO_TogglePin(
-					  Test1_LED_GPIO_Port,
-					  Test1_LED_Pin
-					  );
-			  HAL_GPIO_TogglePin(
-			  					  LD3_GPIO_Port,
-			  					  LD3_Pin
-			  					  );
+			  HAL_TIM_Base_Stop_IT(&htim1);
+			  isStored = 1;
 		  }
 
 	  }
 }
 
+void store() {
+
+	HAL_GPIO_TogglePin(LD3_GPIO_Port,LD3_Pin);
+	__HAL_TIM_SET_COUNTER(&htim1,0);
+	HAL_TIM_Base_Start_IT(&htim1);
+
+}
+
+void copyToken () {
+	uint8_t i = 0;
+	uint8_t j = 0;
+
+	while (receiveToken[i] == '\0' && i < 128) {
+			i ++;
+		}
+
+	while (receiveToken[i] != '\0' && i < 128) {
+			sendToken[j] = receiveToken[i];
+			j ++;
+			i ++;
+		}
+	length = j; // GETS LENGTH
+
+	while (j < 128) {
+		sendToken[j] = '\0';
+		j ++;
+	}
+	memset(receiveToken, 0, sizeof(receiveToken));
+}
+
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART1) { // other stms
-        // Handle data from USART1
-//        process_uart1(rx1_byte);
-//        HAL_UART_Receive_IT(&huart1, &rx1_byte, 1);  // Re-arm
+		  copyToken();
+		  store();
+		  verify();
+
+
+		  HAL_UART_Receive_IT(&huart1, receiveToken, sizeof(receiveToken));
     }
     else if (huart->Instance == USART2) { // computer
-        // Handle data from USART2
-//        process_uart2(rx2_byte);
-//        HAL_UART_Receive_IT(&huart2, &rx2_byte, 1);  // Re-arm
+		  isHead = 1;
+		  copyToken();
+		  store();
+		  isVerify = 1;
+
+		  HAL_UART_Receive_IT(&huart2, receiveToken, sizeof(receiveToken));
     }
 }
 
@@ -124,7 +198,6 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
 
   /* USER CODE END 1 */
 
@@ -150,29 +223,43 @@ int main(void)
   MX_TIM1_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_GPIO_WritePin (
-  		  Test2_LED_GPIO_Port,
-  		  Test2_LED_Pin,
-		  1);
-  HAL_GPIO_WritePin (
-  		  Test1_LED_GPIO_Port,
-  		  Test1_LED_Pin,
-  		  0);
-  HAL_GPIO_WritePin (
-    		  LD3_GPIO_Port,
-    		  LD3_Pin,
-    		  1);
 
-  HAL_TIM_Base_Start_IT(&htim1);
+  HAL_GPIO_WritePin (
+	  LD3_GPIO_Port,
+	  LD3_Pin,
+	  0);
+  HAL_UART_Receive_IT(&huart2, receiveToken, sizeof(receiveToken));
+  HAL_UART_Receive_IT(&huart1, receiveToken, sizeof(receiveToken));
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-//  HAL_UART_Receive(&huart1, (uint8_t*)character, sizeof(character));
-//  HAL_UART_Receive(&huart2, (uint8_t*)character, sizeof(character));
+
   while (1)
   {
+	  if (isStored && isVerify) {
+		  appendID();
+		  if (isHead) {
+			  if (isEnd) {
+				  HAL_UART_Transmit_IT(&huart2, sendToken, sizeof(sendToken));
+				  isEnd = 0;
+				  isHead = 0;
+			  } else {
+				  sumResult[0] = checkSum(sendToken, length);
+				  appendCheckSum();
+				  HAL_UART_Transmit_IT(&huart1, sendToken, sizeof(sendToken));
+				  isEnd = 1;
+			  }
+		  } else {
+			  sumResult[0] = checkSum(sendToken, length);
+			  appendCheckSum();
+			  HAL_UART_Transmit_IT(&huart1, sendToken, sizeof(sendToken));
+		  }
+		  HAL_GPIO_TogglePin(LD3_GPIO_Port,LD3_Pin);
+		  isVerify = 0;
+		  isStored = 0;
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -343,7 +430,7 @@ static void MX_USART2_UART_Init(void)
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
   huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_RTS;
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;

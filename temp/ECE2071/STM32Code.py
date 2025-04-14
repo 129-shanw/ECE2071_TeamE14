@@ -7,6 +7,7 @@ NUM_OF_DATA_POINTS = 9
 #Serial port
 devices = serial.tools.list_ports.comports()
 for device in devices:
+    print(device.description)
     if (device.description == "STM32 STLink"):
         STM_device = device.device
 

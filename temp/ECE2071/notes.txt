@@ -1,0 +1,7 @@
+Rename ID
+
+Setup:
+Tim1 with interrupts prescale 31 and counter 999
+UART1 and 2 with global interrupt asynchrnous
+
+
