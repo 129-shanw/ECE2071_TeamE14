@@ -129,10 +129,14 @@ class Menu():
             self.save_recording()
 
         elif self.current_mode == self.modes[1]:
+            zero_count = 0
+            self.ser.read() #will block until it starts reading actual data
             while True:
                 byte = self.ser.read(1)
                 self.audio_data.append(byte[0])
 
+                if zero_count == 10: #can adjust number of zeroes in a row where the recording is determined to have finished
+                    raise NotImplementedError
 
 
     def save_recording(self):
