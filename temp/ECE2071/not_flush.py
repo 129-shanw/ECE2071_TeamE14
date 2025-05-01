@@ -6,8 +6,8 @@ BAUD_RATE = 115200
 
 devices = serial.tools.list_ports.comports()
 for device in devices:
-    # print(device.description) 
-    if "STMicroelectronics STLink Virtual COM Port (COM3)" in device.description:
+    print(device.description) 
+    if "STMicroelectronics STLink Virtual COM Port" in device.description:
         STM_device = device.device
 
 ser = serial.Serial(STM_device, BAUD_RATE, timeout = 1)
