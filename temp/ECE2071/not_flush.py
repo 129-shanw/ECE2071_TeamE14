@@ -6,7 +6,7 @@ BAUD_RATE = 115200
 
 devices = serial.tools.list_ports.comports()
 for device in devices:
-    # print(device.description) 
+    print(device.description) 
     if "STMicroelectronics STLink Virtual COM Port (COM3)" in device.description:
         STM_device = device.device
 
@@ -15,7 +15,7 @@ print(f"Connected to: {STM_device}")
 
 data_send = input("Enter the data to send: ")
 ser.write(data_send.encode().ljust(128, b'\0'))
-time.sleep(1) # Give time for data to transmit
+time.sleep(1) 
 
 data_receive = ser.readline()
 

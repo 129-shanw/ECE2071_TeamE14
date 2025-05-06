@@ -1,0 +1,2 @@
+
+    print(f"Received chunk with size {len(chunk)} b
