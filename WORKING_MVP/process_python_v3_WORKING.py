@@ -2,14 +2,14 @@ import numpy as np
 import wave
 import serial
 
-# ——— Configuration ———
-SAMPLE_RATE    = 5000        # samples/sec
-RECORD_SECONDS = 5           # seconds to capture
+# ---- Configuration -----
+SAMPLE_RATE    = 5000        #Sample rate = 5000Hz
+RECORD_SECONDS = 5           #Recording time
 NUM_SAMPLES    = SAMPLE_RATE * RECORD_SECONDS
-PORT           = 'COM12'      # ← your Processing STM port
+PORT           = 'COM3'      # ← your Processing STM port
 BAUD_RATE      = 115200
 OUTPUT_WAV     = 'audio_recording.wav'
-# ————————————————————
+# ------------------------
 
 def record_and_save():
     # 1) Open port in blocking mode
