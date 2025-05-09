@@ -32,7 +32,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define SAMPLE_RATE 5000
-#define BUFFER_SIZE 1000
+#define BUFFER_SIZE 500
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
