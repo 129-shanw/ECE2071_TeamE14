@@ -8,7 +8,7 @@ import datetime
 SAMPLE_RATE    = 5000        # samples/sec
 RECORD_SECONDS = 5           # seconds to capture
 NUM_SAMPLES    = SAMPLE_RATE * RECORD_SECONDS
-PORT           = 'COM12'      # ← your Processing STM port
+PORT           = 'COM3'      # ← your Processing STM port
 BAUD_RATE      = 115200
 OUTPUT_WAV     = 'audio_recording_v6.wav'
 # ————————————————————
@@ -68,9 +68,6 @@ def record_and_save():
     
     # 4) Convert to numpy array
     audio = np.frombuffer(data, dtype=np.uint8)
-    
-    # 5) Improve sound quality through normalization
-    print("Enhancing audio quality...")
     
     # Convert to float for processing
     audio_float = audio.astype(np.float32)
