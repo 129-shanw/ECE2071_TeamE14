@@ -31,7 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define SAMP_BUF_SIZE  200
+#define BUFFER_SIZE  200
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -44,8 +44,8 @@ UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-uint8_t rxBuf[SAMP_BUF_SIZE];
-uint8_t txBuf[SAMP_BUF_SIZE];
+uint8_t rxBuf[BUFFER_SIZE];
+uint8_t txBuf[BUFFER_SIZE];
 uint8_t last_sample = 0;  // history for moving average
 /* USER CODE END PV */
 
@@ -97,7 +97,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   // start listening on UART1 for the very first byte
-  HAL_UART_Receive_IT(&huart1, rxBuf, SAMP_BUF_SIZE);
+  HAL_UART_Receive_IT(&huart1, rxBuf, BUFFER_SIZE);
   //HAL_UART_Transmit_IT(&huart2, (uint8_t[]){0}, 0); // ensure USART2 ready (optional)
 
   /* USER CODE END 2 */
@@ -281,26 +281,26 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   if (huart->Instance == USART1)
   {
     // Process each sample in rxBuf
-    for (uint16_t i = 0; i < SAMP_BUF_SIZE; i++)
+    for (uint16_t i = 0; i < BUFFER_SIZE; i++)
     {
       uint8_t curr = rxBuf[i];
-      // length‑2 moving average
+      // length/2 moving average
       txBuf[i] = (last_sample + curr) >> 1;
       last_sample = curr;
     }
 
     // Transmit the entire filtered block on USART2
-    HAL_UART_Transmit_IT(&huart2, txBuf, SAMP_BUF_SIZE);
+    HAL_UART_Transmit_IT(&huart2, txBuf, BUFFER_SIZE);
 
-    // Re‑arm block receive on USART1
-    HAL_UART_Receive_IT(&huart1, rxBuf, SAMP_BUF_SIZE);
+    // Re-arm block receive on USART1
+    HAL_UART_Receive_IT(&huart1, rxBuf, BUFFER_SIZE);
   }
 }
 
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
   if (huart->Instance == USART1) {
     // clear overrun framing errors, then
-    HAL_UART_Receive_IT(&huart1, rxBuf, SAMP_BUF_SIZE);
+    HAL_UART_Receive_IT(&huart1, rxBuf, BUFFER_SIZE);
   }
 }
 /* USER CODE END 4 */

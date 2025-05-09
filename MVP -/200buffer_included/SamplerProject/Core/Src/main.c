@@ -32,7 +32,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define SAMPLE_RATE 5000
-#define SAMP_BUF_SIZE  200
+#define BUFFER_SIZE  200
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -48,8 +48,8 @@ TIM_HandleTypeDef htim1;
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
-uint8_t sampBuf[SAMP_BUF_SIZE];
-uint16_t sampIdx = 0;
+uint8_t Buffer[BUFFER_SIZE];
+uint16_t BuffIdx = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -397,14 +397,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
       uint8_t sample = (uint8_t)HAL_ADC_GetValue(&hadc1);
 
       // 2) store in buffer
-      sampBuf[sampIdx++] = sample;
+      Buffer[BuffIdx++] = sample;
 
       // 3) when buffer full, send block
-      if (sampIdx >= SAMP_BUF_SIZE)
+      if (BuffIdx >= BUFFER_SIZE)
       {
         // non‑blocking transmit of the entire block
-        HAL_UART_Transmit_IT(&huart1, sampBuf, SAMP_BUF_SIZE);
-        sampIdx = 0;
+        HAL_UART_Transmit_IT(&huart1, Buffer, BUFFER_SIZE);
+        BuffIdx = 0;
       }
     }
   }
