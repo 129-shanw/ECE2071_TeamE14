@@ -5,16 +5,16 @@ import serial
 
 # ——— Configuration ———
 SAMPLE_RATE   = 5000             # samples/sec
-RECORD_SECONDS = 5               # nominal length (for reference only)
+RECORD_SECONDS = 30               # nominal length (for reference only)
 NUM_SAMPLES   = SAMPLE_RATE * RECORD_SECONDS
 PORT          = 'COM3'          # ← your Processing STM port
 BAUD_RATE     = 115200
-OUTPUT_WAV    = 'audio_recording.wav'
+OUTPUT_WAV    = 'E14_Project.wav'
 # ————————————————————
 
 def record_and_save():
     ser = serial.Serial(PORT, BAUD_RATE, timeout=1.0)
-    print(f"Opened {PORT} @ {BAUD_RATE}. Waiting for {NUM_SAMPLES} samples…")
+    print(f"Opened {PORT} @ {BAUD_RATE}. Waiting for {RECORD_SECONDS} seconds at {SAMPLE_RATE} Hz")
     ser.reset_input_buffer()
 
     data = bytearray()
@@ -31,7 +31,11 @@ def record_and_save():
     elapsed = time.time() - start
     ser.close()
 
-    print(f"Captured {len(data)}/{NUM_SAMPLES} samples in {elapsed:.3f}s")
+    print(f"- Captured {len(data)}/{NUM_SAMPLES} samples in {elapsed:.3f}s")
+
+    #calculate actual sample rate
+    actual_sample_rate = int(len(data) / elapsed) if elapsed > 0 else 0
+    print(f"- Actual sample rate: ~{actual_sample_rate} Hz")
 
     audio = np.frombuffer(data, dtype=np.uint8)
     with wave.open(OUTPUT_WAV, 'wb') as wf:
@@ -40,7 +44,7 @@ def record_and_save():
         wf.setframerate(SAMPLE_RATE)     # 5 kHz
         wf.writeframes(audio.tobytes())
 
-    print(f"Saved WAV: {OUTPUT_WAV}")
+    print(f"- Saved Audio File: {OUTPUT_WAV}")
 
 if __name__ == '__main__':
     record_and_save()
