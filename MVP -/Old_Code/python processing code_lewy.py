@@ -12,7 +12,7 @@ import struct
 import time
 
 # Configuration
-SERIAL_PORT = 'COM3'  # Update with your serial port (e.g., '/dev/ttyUSB0' for Linux)
+SERIAL_PORT = 'COM12'  # Update with your serial port (e.g., '/dev/ttyUSB0' for Linux)
 BAUD_RATE = 115200
 SAMPLE_RATE = 5000  # 5 kHz sampling rate
 BIT_DEPTH = 8       # 8-bit audio samples
