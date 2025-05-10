@@ -15,7 +15,7 @@ print(f"Connected to: {STM_device}")
 
 data_send = input("Enter the data to send: ")
 ser.write(data_send.encode().ljust(128, b'\0'))
-time.sleep(1) # Give time for data to transmit
+time.sleep(1) 
 
 data_receive = ser.readline()
 

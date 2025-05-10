@@ -2,10 +2,14 @@
 **/.DS_Store
 
 # Ignore output files:
-*/outputs/*
+**/outputs/*
+
+# Ignore metadata files:
+**/.metadata/*
+**/metadata/*
 
 # Ignore debug files
-*/Debug/*
+**/Debug/*
 *.launch
 
 # Prerequisites
@@ -47,7 +51,7 @@
 *.hex
 
 # Debug files
-*.dSYM/
+**.dSYM/
 *.su
 *.idb
 *.pdb
@@ -55,7 +59,7 @@
 # Kernel Module Compile Results
 *.mod*
 *.cmd
-.tmp_versions/
+**.tmp_versions/
 modules.order
 Module.symvers
 Mkfile.old
