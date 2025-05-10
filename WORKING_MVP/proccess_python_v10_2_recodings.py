@@ -5,7 +5,7 @@ import time
 
 # Configuration
 SAMPLE_RATE = 5000
-PORT = 'COM12'
+PORT = 'COM3'
 BAUD_RATE = 115200
 
 def record_and_process():

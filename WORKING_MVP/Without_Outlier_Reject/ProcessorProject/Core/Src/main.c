@@ -32,7 +32,6 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define BUFFER_SIZE  500
-#define max_value 250
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -282,18 +281,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   if (huart->Instance == USART1)
   {
     // Process each sample in rxBuf
-	  for (uint16_t i = 0; i < BUFFER_SIZE; i++) {
-	      uint8_t curr = rxBuf[i];
-
-	      // one‐sided rejection of high‐value spikes
-	      if (curr > max_value) {
-	          curr = last_sample;    // or curr = MAX_VALID_SAMPLE;
-	      }
-
-	      // length‐2 moving average
-	      txBuf[i] = (last_sample + curr) >> 1;
-	      last_sample = curr;
-	  }
+    for (uint16_t i = 0; i < BUFFER_SIZE; i++)
+    {
+      uint8_t curr = rxBuf[i];
+      // length/2 moving average
+      txBuf[i] = (last_sample + curr) >> 1;
+      last_sample = curr;
+    }
 
     // Transmit the entire filtered block on USART2
     HAL_UART_Transmit_IT(&huart2, txBuf, BUFFER_SIZE);
