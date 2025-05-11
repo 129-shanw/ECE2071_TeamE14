@@ -9,7 +9,7 @@ class Menu():
         self.current_mode = None
         self.current_format = None
         self.record_length = 0
-        self.SAMPLE_RATE = 5000;
+        self.SAMPLE_RATE = 22000
 
         self.menu_options = ["Mode Select", "Format Select","Change Recording Length"]
         self.menu_functions = [self.mode_select, self.format_select, self.set_record_len]
@@ -25,12 +25,14 @@ class Menu():
         self.dist_trig_functions = [self.record_audio, self.main_menu]
 
         self.ser = None
+        self.start_bit = 256
+        self.buffer_size = 1024
         self.audio_data = []
 
 
     def default(self):
         self.current_format = self.formats[0] #default to .wav
-        self.record_length = 60
+        self.record_length = 5
         self.main_menu()
 
     def main_menu(self):
@@ -124,22 +126,29 @@ class Menu():
 
     def record_audio(self):
         if self.current_mode == self.modes[0]: #manual recording
-            for _ in range(0, self.record_length*self.SAMPLE_RATE):
-                byte = self.ser.read(1)
-                self.audio_data.append(byte[0])
-            self.save_recording()
+            for _ in range(0, self.record_length*self.SAMPLE_RATE/self.buffer_size):
+                while True:
+                    start = self.ser.read(1)[0]
+                    if start == self.start_bit:
+                        self.ser.read(1)
+                        buffer = self.ser.read(self.buffer_size)
+                        self.audio_data.append(buffer[0])
+                        self.save_recording()
+                        break
 
         elif self.current_mode == self.modes[1]: #distance trig mode
             zero_count = 0
+            self.ser.reset_input_buffer()
             self.ser.read() #will block until it starts reading actual data
             while True:
-                in_range = self.ser.read(1)[0] #check in data is valid (was ultrasonic in range)
-                print(in_range)
-                #byte = self.ser.read(1024) #read the data after the range check
+                start = self.ser.read(1)[0]
+                if start == self.start_bit:
+                    in_range = self.ser.read(1)[0] #check in data is valid (was ultrasonic in range)
+                    print(in_range)
+                    buffer = self.ser.read(self.buffer_size) #read the data after the range check
 
                 if in_range == 1: #in range
-                    pass
-                    #self.audio_data.append(byte[0]) #append data to list
+                    self.audio_data.append(buffer[0]) #append data to list
 
                 elif in_range == 0: #out of range
                     zero_count += 1
@@ -188,7 +197,7 @@ class Menu():
                 print("Saved: waveform_filtered.png")
 
             elif self.current_format == self.formats[2]: #.csv
-                pass
+                
         else:
             print("no data :(")
         
