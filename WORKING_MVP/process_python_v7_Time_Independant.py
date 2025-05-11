@@ -3,14 +3,14 @@ import numpy as np
 import wave
 import serial
 
-# --- Configuration ---
+# --- Configuration --- #
 SAMPLE_RATE   = 5000             # samples/sec
 RECORD_SECONDS = 15               # nominal length (for reference only)
 NUM_SAMPLES   = SAMPLE_RATE * RECORD_SECONDS
-PORT          = 'COM6'          # ← your Processing STM port
+PORT          = 'COM6'          # STM port
 BAUD_RATE     = 115200
 OUTPUT_WAV    = 'E14_Project.wav'
-# ---------------------
+# --------------------- #
 
 def record_and_save():
     ser = serial.Serial(PORT, BAUD_RATE, timeout=1.0)
@@ -33,7 +33,7 @@ def record_and_save():
 
     print(f"- Captured {len(data)}/{NUM_SAMPLES} samples in {elapsed:.3f}s")
 
-    #calculate actual sample rate
+    # calculate actual sample rate
     actual_sample_rate = int(len(data) / elapsed) if elapsed > 0 else 0
     print(f"- Actual sample rate: ~{actual_sample_rate} Hz")
 
