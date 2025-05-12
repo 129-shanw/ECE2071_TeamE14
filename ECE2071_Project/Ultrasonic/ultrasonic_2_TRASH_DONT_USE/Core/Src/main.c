@@ -71,10 +71,6 @@ uint8_t length;
 uint8_t echo_started = 0;
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *tim) {
-	 static uint8_t busy = 0;
-	    if (busy) return;
-	    busy = 1;
-
 	  if(tim->Instance == TIM1){
 		  echo_started = 0;
 		  HAL_GPIO_WritePin(Trig_GPIO_Port, Trig_Pin, 1);
@@ -113,21 +109,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *tim) {
 					  HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 0);
 					  }
 				  }
-
-				  length = sizeof(buffer)/sizeof(uint8_t);
-				  //HAL_UART_Transmit(&huart2, &start_bit, sizeof(start_bit), 100);
-				  //HAL_UART_Transmit(&huart2, (uint8_t*)&length, sizeof(length), 100);
-				  HAL_UART_Transmit(&huart2, &in_range, sizeof(in_range), 100);
-				  //HAL_UART_Transmit(&huart2, &buffer, sizeof(buffer), 100);
-				  //HAL_UART_Transmit(&huart2, &distance, sizeof(distance), 1000);
-
 				  break;
 			  }
 
 		  }
 	  }
-	  }
-	  busy = 0;
 }
 /* USER CODE END 0 */
 
@@ -371,23 +357,23 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, Test3_Pin|Test2_Pin|Test1_Pin|Trig_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(Trigger_GPIO_Port, Trigger_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pins : Test3_Pin Test2_Pin Test1_Pin Trig_Pin */
-  GPIO_InitStruct.Pin = Test3_Pin|Test2_Pin|Test1_Pin|Trig_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : Echo_Pin */
   GPIO_InitStruct.Pin = Echo_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(Echo_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : Trigger_Pin */
+  GPIO_InitStruct.Pin = Trigger_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(Trigger_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LD3_Pin */
   GPIO_InitStruct.Pin = LD3_Pin;
