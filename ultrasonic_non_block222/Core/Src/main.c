@@ -76,15 +76,14 @@ uint8_t edge_state;
 uint16_t rising_edge;
 uint16_t falling_edge;
 uint8_t distance;
-uint8_t in_range = 0;
+uint16_t in_range = 0x0000;
 uint16_t start_bit = 0xFFFF;
-uint8_t end_bit = 0x00;
 
 
-#define BUFFER_SIZE 50
+#define BUFFER_SIZE 512
 uint16_t spi_rx_buffer[BUFFER_SIZE];
-uint16_t uart_tx_buffer0[BUFFER_SIZE / 2];
-uint16_t uart_tx_buffer1[BUFFER_SIZE / 2];
+uint16_t uart_tx_buffer0[BUFFER_SIZE / 2 + 2];
+uint16_t uart_tx_buffer1[BUFFER_SIZE / 2 + 2];
 uint16_t last_sample = 2048;
 volatile uint8_t phase = 0;
 volatile uint8_t isReady = 0;
@@ -119,12 +118,12 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){
 
 			if(in_range == 0){
 				if(distance <= 20){
-					in_range = 1;
+					in_range = 0x0001;
 					HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 1);
 				}
 			} else if(in_range == 1){
 				if(distance > 25){
-					in_range = 0;
+					in_range = 0x0000;
 					HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 0);
 				}
 			}
@@ -134,16 +133,12 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim){
 
 void HAL_SPI_RxHalfCpltCallback(SPI_HandleTypeDef *hspi) {
     if (hspi->Instance == SPI1) {
-
-        phase = 0;
+    	uart_tx_buffer0[0] = start_bit;
+    	uart_tx_buffer0[1] = in_range;
         for (int i = 0; i < BUFFER_SIZE / 2; ++ i) {
-        		//uart_tx_buffer0[i] = (last_sample + spi_rx_buffer[i]) >> 1;
+        		uart_tx_buffer0[i + 2] = (last_sample + spi_rx_buffer[i]) >> 1;
         		last_sample = spi_rx_buffer[i];
-        		uart_tx_buffer0[i] = spi_rx_buffer[i];
         }
-        uart_tx_buffer0[0] = start_bit;
-        uart_tx_buffer0[1] = in_range;
-        uart_tx_buffer0[BUFFER_SIZE/2 - 1] = end_bit;
         isReady = 1;
 
     }
@@ -151,15 +146,12 @@ void HAL_SPI_RxHalfCpltCallback(SPI_HandleTypeDef *hspi) {
 
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
     if (hspi->Instance == SPI1) {
-        phase = 1;
+    	uart_tx_buffer1[0] = start_bit;
+    	uart_tx_buffer1[1] = in_range;
         for (int i = 0; i < BUFFER_SIZE / 2; ++ i) {
-        		//uart_tx_buffer1[i] = (last_sample + spi_rx_buffer[i + BUFFER_SIZE / 2]) >> 1;
+        		uart_tx_buffer1[i + 2] = (last_sample + spi_rx_buffer[i + BUFFER_SIZE / 2]) >> 1;
         		last_sample = spi_rx_buffer[i + BUFFER_SIZE / 2];
-        		uart_tx_buffer1[i] = spi_rx_buffer[i + BUFFER_SIZE/2];
         }
-        uart_tx_buffer1[0] = start_bit;
-		uart_tx_buffer1[1] = in_range;
-		uart_tx_buffer1[BUFFER_SIZE/2 - 1] = end_bit;
         isReady = 1;
     }
 }
@@ -167,6 +159,12 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart->Instance == USART2) {
     	isTransmit = 1;
+    	if(phase == 0) {
+    		phase = 1;
+    	} else {
+    		phase = 0;
+    	}
+
     }
 }
 
@@ -210,8 +208,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim1);
   HAL_TIM_IC_Start_IT(&htim16, TIM_CHANNEL_1);
-  HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)spi_rx_buffer, BUFFER_SIZE * 2);
-
+  HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)spi_rx_buffer, (BUFFER_SIZE) * 2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -222,9 +219,15 @@ int main(void)
     /* USER CODE BEGIN 3 */
 		  if (isReady && isTransmit) {
 			  isReady = 0;
+			  isTransmit = 0;
 			  if (phase == 0) {
-				  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)uart_tx_buffer0, BUFFER_SIZE);
-//				  uint16_t first_adc_value = uart_tx_buffer0[0];
+				  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)uart_tx_buffer0, BUFFER_SIZE + 4);
+//				  for (int i = 0; i < BUFFER_SIZE / 2; i ++) {
+//					  sprintf(uart_msg, "0|%d : %u\r\n", i, uart_tx_buffer0[i]);
+//					  HAL_UART_Transmit(&huart2, (uint8_t*)uart_msg, strlen(uart_msg), HAL_MAX_DELAY);
+//				  }
+
+//				  = uart_tx_buffer0[0];
 //				  sprintf(uart_msg, "ADC sampled being sent B1: %u\r\n", first_adc_value);
 //				  HAL_UART_Transmit(&huart2, (uint8_t*)uart_msg, strlen(uart_msg), HAL_MAX_DELAY);
 //				  first_adc_value = uart_tx_buffer0[1];
@@ -236,10 +239,12 @@ int main(void)
 //				  first_adc_value = uart_tx_buffer0[(BUFFER_SIZE / 2) - 1];
 //				  sprintf(uart_msg, "ADC sampled being sent B3: %u\r\n", first_adc_value);
 //				  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)uart_msg, strlen(uart_msg));
-//				  isTransmit = 0;
 			  } else {
-				  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)uart_tx_buffer1, BUFFER_SIZE);
-
+				  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)uart_tx_buffer1, BUFFER_SIZE + 4);
+//				  for (int i = 0; i < BUFFER_SIZE / 2; i ++) {
+//					  sprintf(uart_msg, "1|%d : %u\r\n", i, uart_tx_buffer1[i]);
+//					  HAL_UART_Transmit(&huart2, (uint8_t*)uart_msg, strlen(uart_msg), HAL_MAX_DELAY);
+//				  }
 //				  uint16_t first_adc_value = uart_tx_buffer1[0];
 //				  sprintf(uart_msg, "ADC sampled being sent B1: %u\r\n", first_adc_value);
 //				  HAL_UART_Transmit(&huart2, (uint8_t*)uart_msg, strlen(uart_msg), HAL_MAX_DELAY);
@@ -252,7 +257,7 @@ int main(void)
 //				  first_adc_value = uart_tx_buffer1[(BUFFER_SIZE / 2) - 1];
 //				  sprintf(uart_msg, "ADC sampled being sent B3: %u\r\n", first_adc_value);
 //				  HAL_UART_Transmit_DMA(&huart2, (uint8_t*)uart_msg, strlen(uart_msg));
-//				  isTransmit = 0;
+
 			  }
 		  }
   }
