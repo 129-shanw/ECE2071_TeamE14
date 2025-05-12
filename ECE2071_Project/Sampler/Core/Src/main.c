@@ -54,7 +54,7 @@ UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
-#define BUFFER_SIZE 8192
+#define BUFFER_SIZE 500
 volatile uint8_t isReady = 0;
 volatile uint8_t isTransmit = 1;
 volatile uint8_t phase = 0;
