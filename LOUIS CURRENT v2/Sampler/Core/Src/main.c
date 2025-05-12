@@ -109,7 +109,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
         spi_tx_buffer1[1] = IN_RANGE_HEADER;
         for (int i = 0; i < BUFFER_SIZE / 2 - 3; ++i)
         {
-        	spi_tx_buffer1[i + 2] = adc_buffer[i];
+        	spi_tx_buffer1[i + 2] = adc_buffer[i + BUFFER_SIZE / 2];
         }
         spi_tx_buffer1[BUFFER_SIZE / 2 - 1] = END_HEADER;
         isReady = 1;
